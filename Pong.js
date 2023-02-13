@@ -8,8 +8,7 @@ var paddleSpeed = 6;
 var ballSpeed = 5;
 
 var leftScore = 0;
-var rightScore = 0;
-
+var comScore = 0;
 const leftPaddle = {
   // start in the middle of the game on the left side
   x: grid * 2,
@@ -20,7 +19,7 @@ const leftPaddle = {
   // paddle velocity
   dy: 0
 };
-const rightPaddle = {
+const com = {
   // start in the middle of the game on the right side
   x: canvas.width - grid * 3,
   y: canvas.height / 2 - paddleHeight / 2,
@@ -61,7 +60,7 @@ function loop() {
 
   // move paddles by their velocity
   leftPaddle.y += leftPaddle.dy;
-  rightPaddle.y += rightPaddle.dy;
+  com.y += com.dy;
 
   // prevent paddles from going through walls
   if (leftPaddle.y < grid) {
@@ -71,22 +70,26 @@ function loop() {
     leftPaddle.y = maxPaddleY;
   }
 
-  if (rightPaddle.y < grid) {
-    rightPaddle.y = grid;
+  if (com.y < grid) {
+    com.y = grid;
   }
-  else if (rightPaddle.y > maxPaddleY) {
-    rightPaddle.y = maxPaddleY;
+  else if (com.y > maxPaddleY) {
+    com.y = maxPaddleY;
   }
 
   // draw paddles
   context.fillStyle = 'white';
   context.fillRect(leftPaddle.x, leftPaddle.y, leftPaddle.width, leftPaddle.height);
-  context.fillRect(rightPaddle.x, rightPaddle.y, rightPaddle.width, rightPaddle.height);
+  context.fillRect(com.x, com.y, com.width, com.height);
 
   // move ball by its velocity
   ball.x += ball.dx;
   ball.y += ball.dy;
-
+ 
+  //simple AI to control the com
+  let computerLevel = 0.1;
+  com.y +=(ball.y - (com.y + com.height/2)) * computerLevel;
+  
   // prevent ball from going through walls by changing its velocity
   if (ball.y < grid) {
     ball.y = grid;
@@ -117,12 +120,12 @@ function loop() {
     // in the next frame
     ball.x = leftPaddle.x + leftPaddle.width;
   }
-  else if (collides(ball, rightPaddle)) {
+  else if (collides(ball, com)) {
     ball.dx *= -1;
 
     // move ball next to the paddle otherwise the collision will happen again
     // in the next frame
-    ball.x = rightPaddle.x - ball.width;
+    ball.x = com.x - ball.width;
   }
 
   // draw ball
@@ -140,17 +143,23 @@ function loop() {
   // keep score
   if ( (ball.x == 0 || ball.x == canvas.width)){
     if (ball.x == 0){
-      rightScore += 1;
+      comScore += 1;
+      if(comScore === 7){
+        gameover();
+      }
     }
     if (ball.x == canvas.width){
       leftScore += 1;
+      if(leftScore === 7){
+        gameover();
+      }
     }
   }
 
   // display right score
   context.font = '40pt Futura';
   context.fillStyle = 'rgb(52,132,240)';
-  context.fillText(rightScore, canvas.width*3/4, canvas.height/2);
+  context.fillText(comScore, canvas.width*3/4, canvas.height/2);
 
   //display left score
   context.font = '40pt Futura';
@@ -160,16 +169,6 @@ function loop() {
 
 // listen to keyboard events to move the paddles
 document.addEventListener('keydown', function(e) {
-
-  // up arrow key
-  if (e.which === 38) {
-    rightPaddle.dy = -paddleSpeed;
-  }
-  // down arrow key
-  else if (e.which === 40) {
-    rightPaddle.dy = paddleSpeed;
-  }
-
   // w key
   if (e.which === 87) {
     leftPaddle.dy = -paddleSpeed;
@@ -182,14 +181,20 @@ document.addEventListener('keydown', function(e) {
 
 // listen to keyboard events to stop the paddle if key is released
 document.addEventListener('keyup', function(e) {
-  if (e.which === 38 || e.which === 40) {
-    rightPaddle.dy = 0;
-  }
 
   if (e.which === 83 || e.which === 87) {
     leftPaddle.dy = 0;
   }
 });
+function gameover(){
+  document.getElementById("gameOver").style.display = "block";
+}
 
+document.getElementById("playAgain").addEventListener("click", function() {
+  
+  leftScore = 0;
+  comScore = 0;
+  document.getElementById("gameOver").style.display = "none";
+});
 // start the game
 requestAnimationFrame(loop);
